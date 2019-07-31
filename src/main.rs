@@ -12,14 +12,13 @@ use prettytable::{Table, Row};
 
 fn main() {
     let mut input = String::new();
-    println!("Pls provide baseUrl");
+    println!("Pls provide baseUrl:");
     io::stdin().read_line(&mut input).expect("Couldn't read the line");
 
     let url = String::from(input);
     let mut offers = scrape(&url);
 
-    // offers.sort_by(|a, b| (a.price.round() as u32).cmp(&(b.price.round() as u32)));
-    offers.sort_by(|a, b| a.price.partial_cmp(&b.price).unwrap() );
+    offers.sort_by(|a, b| a.price.partial_cmp(&b.price).expect("Could not sort offers"));
 
     let mut table = Table::new();
 
@@ -29,7 +28,7 @@ fn main() {
 
     table.printstd();
 
-    let lowest_price = offers.iter().min_by_key(|o| o.price.round() as u32).unwrap();
+    let lowest_price = offers.iter().min_by_key(|o| o.price as u32).expect("Could not find offer with a lowest price");
 
     println!("Total items: {}", offers.len());
     println!("Item with a lowest price: {}", lowest_price);
@@ -63,7 +62,7 @@ impl Offer {
 
         Offer {
             title: title,
-            price: parse_price(&price).unwrap(),
+            price: parse_price(&price).expect("Could not parse price"),
             url: url.to_string(),
         }
     }
@@ -94,13 +93,25 @@ fn get_all_pages(base_url: &str) -> Vec<reqwest::Response> {
     assert!(response.status().is_success());
 
     let first_page = Document::from_read(response).expect("Could not parse first page");
-    let pager = first_page.find(Class("pager")).next().expect("Could not parse pager");
 
-    let total_pages = pager.find(Attr("data-cy", "page-link-last").descendant(Name("span"))).next().expect("Could not find last page").text();
+    let pager = first_page.find(Class("pager")).next();
+
+    let total_pages = match pager {
+        Some(pager) => {
+            pager
+                .find(Attr("data-cy", "page-link-last").descendant(Name("span")))
+                .next()
+                .expect("Could not find last page")
+                .text()
+                .parse::<u32>()
+                .expect("Could not parse last page number")
+        },
+        None => 1
+    };
 
     let mut pages = Vec::new();
 
-    for page_number in 1..(parse_price(&total_pages).unwrap().round() as u32) {
+    for page_number in 1..=total_pages {
         let page = get_page(format!("{}/?page={}", base_url, page_number.to_string()));
 
         pages.push(page);
