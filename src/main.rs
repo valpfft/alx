@@ -2,6 +2,7 @@ extern crate reqwest;
 extern crate select;
 
 use std::fmt;
+use std::io::{self};
 
 use select::document::Document;
 use select::predicate::{Class, Name, Predicate, Attr};
@@ -10,7 +11,12 @@ use select::predicate::{Class, Name, Predicate, Attr};
 use prettytable::{Table, Row};
 
 fn main() {
-    let mut offers = scrape("https://www.olx.pl/oferty/q-playstation-4-pro/?search%5Bfilter_float_price%3Afrom%5D=600&");
+    let mut input = String::new();
+    println!("Pls provide baseUrl");
+    io::stdin().read_line(&mut input).expect("Couldn't read the line");
+
+    let url = String::from(input);
+    let mut offers = scrape(&url);
 
     // offers.sort_by(|a, b| (a.price.round() as u32).cmp(&(b.price.round() as u32)));
     offers.sort_by(|a, b| a.price.partial_cmp(&b.price).unwrap() );
