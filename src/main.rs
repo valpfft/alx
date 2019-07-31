@@ -1,21 +1,47 @@
 extern crate reqwest;
 extern crate select;
+extern crate clap;
 
 use std::fmt;
-use std::io::{self};
 
 use select::document::Document;
 use select::predicate::{Class, Name, Predicate, Attr};
+
+use clap::{Arg, App};
 
 #[macro_use] extern crate prettytable;
 use prettytable::{Table, Row};
 
 fn main() {
-    let mut input = String::new();
-    println!("Pls provide baseUrl:");
-    io::stdin().read_line(&mut input).expect("Couldn't read the line");
+    let matches = App::new("Olxer")
+        .version("0.1.0")
+        .author("Valiantsin Mikhaliuk <valiantsin.mikhaliuk@gmail.com>")
+        .about("Hey Olx'er! Let's find something!")
+        .arg(Arg::with_name("url")
+             .short("u")
+             .long("url")
+             .takes_value(true)
+             .help("Base url (first page)")
+             .conflicts_with("query"))
+        .arg(Arg::with_name("query")
+             .short("q")
+             .long("query")
+             .takes_value(true)
+             .help("Search query")
+             .conflicts_with("url"))
+        .get_matches();
 
-    let url = String::from(input);
+    let url = match matches.value_of("url") {
+        Some(url) => url.to_string(),
+        None => {
+            let query = matches.value_of("query").expect("Neither query is missing or url is not provided.");
+
+            build_url(&query)
+        },
+    };
+
+    println!("Scraping following url: {}", url);
+
     let mut offers = scrape(&url);
 
     offers.sort_by(|a, b| a.price.partial_cmp(&b.price).expect("Could not sort offers"));
@@ -125,6 +151,15 @@ fn get_page(url: String) -> reqwest::Response {
     assert!(response.status().is_success());
 
     response
+}
+
+static BASE_URL: &str = "https://www.olx.pl/oferty";
+fn build_url(query: &str) -> String {
+    format!("{}/q-{}", BASE_URL, format_query(&query))
+}
+
+fn format_query(query: &str) -> String {
+    query.trim().replace(" ", "-")
 }
 
 fn parse_price(input: &str) -> Option<f32> {
