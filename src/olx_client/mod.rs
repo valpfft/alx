@@ -3,6 +3,10 @@ use crate::parse_price;
 use select::document::Document;
 use select::predicate::{Class, Name, Predicate, Attr};
 
+use std::collections::HashMap;
+
+static BASE_URL: &str = "https://www.olx.pl/oferty";
+
 impl Offer {
     fn build_from_node(node: &select::node::Node) -> Offer {
         let title = node.find(Name("a").descendant(Name("strong"))).next().expect("Could not parse detailsLink text").text();
@@ -17,10 +21,12 @@ impl Offer {
     }
 }
 
-pub fn scrape(url: &str) -> Vec<Offer> {
+pub fn scrape(params: &HashMap<&str, &str>) -> Vec<Offer> {
     let mut collection = Vec::new();
 
-    let pages = get_all_pages(url);
+    let url = build_url(params);
+
+    let pages = get_all_pages(&url);
 
     for page in pages {
         parse_page(page, &mut collection);
@@ -30,9 +36,32 @@ pub fn scrape(url: &str) -> Vec<Offer> {
 }
 
 
-static BASE_URL: &str = "https://www.olx.pl/oferty";
-pub fn build_url(query: &str) -> String {
-    format!("{}/q-{}", BASE_URL, format_query(&query))
+fn build_url(params: &HashMap<&str, &str>) -> String {
+    let mut url = format!("{}/q-{}", BASE_URL, format_query(params.get("query").unwrap()));
+
+    if params.contains_key("min_price") {
+        add_filter(
+            &format!("search[filter_float_price:from]={}", params.get("min_price").unwrap()),
+            &mut url
+        );
+    }
+
+    if params.contains_key("max_price") {
+        add_filter(
+            &format!("search[filter_float_price:to]={}", params.get("max_price").unwrap()),
+            &mut url
+        ); 
+    }
+
+    url
+}
+
+
+fn add_filter(filter: &str, url: &mut String) {
+    match url.find("?") {
+        Some(_) => url.push_str(&format!("&{}", filter)),
+        None => url.push_str(&format!("?{}", filter)),
+    };
 }
 
 
