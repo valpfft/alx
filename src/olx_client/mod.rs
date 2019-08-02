@@ -26,6 +26,8 @@ pub fn scrape(params: &HashMap<&str, &str>) -> Vec<Offer> {
 
     let url = build_url(params);
 
+    println!("Scraping following url: {}", url);
+
     let pages = get_all_pages(&url);
 
     for page in pages {
