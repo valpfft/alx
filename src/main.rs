@@ -70,7 +70,7 @@ fn main() {
 
     let mut offers = scrape(&url);
 
-    offers.sort_by(|a, b| a.price.partial_cmp(&b.price).expect("Could not sort offers"));
+    offers.sort_unstable_by(|a, b| a.price.partial_cmp(&b.price).expect("Could not sort offers"));
 
     render_table(&offers);
 
