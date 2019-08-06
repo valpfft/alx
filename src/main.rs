@@ -11,6 +11,7 @@ use clap::{Arg, App};
 use prettytable::{Table, Row};
 
 mod olx_client;
+mod allegro_client;
 
 fn main() {
     let matches = App::new("Olxer")
@@ -45,6 +46,7 @@ fn main() {
     }
 
     let mut offers = Vec::new();
+    offers.append(&mut allegro_client::scrape(&params));
     offers.append(&mut olx_client::scrape(&params));
 
     offers.sort_unstable_by(|a, b| a.price.partial_cmp(&b.price).expect("Could not sort offers"));
