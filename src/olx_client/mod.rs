@@ -57,8 +57,6 @@ fn build_url(params: &HashMap<&str, &str>) -> String {
         ); 
     }
 
-    println!("{}", url);
-
     url
 }
 
