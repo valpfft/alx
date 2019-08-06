@@ -11,11 +11,15 @@ impl Offer {
     fn build_from_node(node: &select::node::Node) -> Offer {
         let title = node.find(Name("a").descendant(Name("strong"))).next().expect("Could not parse detailsLink text").text();
         let url = node.find(Name("a")).next().expect("Could not parse detailsLink link").attr("href").expect("Could not parse detailsLink href");
-        let price = node.find(Class("price").descendant(Name("strong"))).next().expect("Could not parse price").text();
+
+        let price = match node.find(Class("price").descendant(Name("strong"))).next() {
+            Some(node) => node.text(),
+            None => "9999999".to_string(),
+        };
 
         Offer {
             title: title,
-            price: parse_price(&price).expect("Could not parse price"),
+            price: parse_price(&price).expect("Olx: Could not parse price"),
             url: url.to_string(),
         }
     }
@@ -52,6 +56,8 @@ fn build_url(params: &HashMap<&str, &str>) -> String {
             &mut url
         ); 
     }
+
+    println!("{}", url);
 
     url
 }

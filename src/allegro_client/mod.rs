@@ -64,7 +64,7 @@ impl Offer {
         let title = allegro_offer.name.to_string();
         Offer {
             title: title,
-            price: parse_price(&allegro_offer.selling_mode.price.amount).expect("Could not parse price"),
+            price: parse_price(&allegro_offer.selling_mode.price.amount).expect("Olx: Could not parse price"),
             url: allegro_offer.url()
         }
     }
