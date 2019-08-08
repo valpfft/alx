@@ -62,6 +62,7 @@ impl AllegroOffer {
 impl Offer {
     fn build_from_allegro_offer(allegro_offer: &AllegroOffer) -> Offer {
         let title = allegro_offer.name.to_string();
+
         Offer {
             title: title,
             price: parse_price(&allegro_offer.selling_mode.price.amount).expect("Olx: Could not parse price"),

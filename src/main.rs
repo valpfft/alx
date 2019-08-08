@@ -1,11 +1,13 @@
 extern crate reqwest;
 extern crate select;
 extern crate clap;
+extern crate csv;
 
-use std::fmt;
+use std::{fmt, io};
 use std::collections::HashMap;
 
 use clap::{Arg, App};
+use serde::Serialize;
 
 #[macro_use] extern crate prettytable;
 use prettytable::{Table, Row};
@@ -32,6 +34,10 @@ fn main() {
              .long("max-price")
              .takes_value(true)
              .help("Maximum price"))
+        .arg(Arg::with_name("export_csv")
+             .long("export-csv")
+             .takes_value(false)
+             .help("Exports search result into csv"))
         .get_matches();
 
     let mut params = HashMap::new();
@@ -51,12 +57,26 @@ fn main() {
 
     offers.sort_unstable_by(|a, b| a.price.partial_cmp(&b.price).expect("Could not sort offers"));
 
-    render_table(&offers);
+    if matches.is_present("export_csv") {
+        export_csv(&offers);
+    } else {
+        render_table(&offers);
 
-    let lowest_price = offers.iter().min_by_key(|o| o.price as u32).expect("Could not find offer with a lowest price");
+        let lowest_price = offers.iter().min_by_key(|o| o.price as u32).expect("Could not find offer with a lowest price");
 
-    println!("Total items: {}", offers.len());
-    println!("Item with a lowest price: {}", lowest_price);
+        println!("Total items: {}", offers.len());
+        println!("Item with a lowest price: {}", lowest_price);
+    }
+}
+
+fn export_csv(offers: &Vec<Offer>) {
+    let mut wtr = csv::Writer::from_writer(io::stdout());
+
+    for offer in offers.iter() {
+        wtr.serialize(offer).expect("Could not serialize offer into CSV");
+    }
+
+    wtr.flush().unwrap();
 }
 
 fn render_table(offers: &Vec<Offer>) {
@@ -69,6 +89,7 @@ fn render_table(offers: &Vec<Offer>) {
     table.printstd();
 }
 
+#[derive(Serialize)]
 pub struct Offer {
     title: String,
     price: f32,

@@ -9,7 +9,7 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use std::thread;
 
@@ -41,7 +41,7 @@ pub fn authenticate() -> String {
     config
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Serialize)]
 struct Config {
     token: Token,
     expire_at: DateTime<Utc>,
@@ -53,23 +53,17 @@ impl Config {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize, Serialize)]
 struct Token {
     access_token: String,
-    token_type: String,
     refresh_token: String,
     expires_in: i64,
-    scope: String,
-    jti: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Deserialize)]
 struct DeviceToken {
-    user_code: String,
     device_code: String,
-    expires_in: u64,
     interval: u64,
-    verification_uri: String,
     verification_uri_complete: String,
 }
 
