@@ -1,14 +1,17 @@
-use crate::Offer;
 use crate::parse_price;
+use crate::Offer;
 
 extern crate slug;
 
 use slug::slugify;
 
-use std::collections::HashMap;
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT};
+use std::collections::HashMap;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+
+use self::auth::authenticate;
+use self::auth::init_config;
 
 mod auth;
 
@@ -41,11 +44,11 @@ struct SellingMode {
 #[derive(Serialize, Deserialize, Debug)]
 struct Price {
     amount: String,
-    currency: String
+    currency: String,
 }
 
-pub fn scrape(params: &HashMap<&str, &str>) -> Vec<Offer> {
-    let access_token = auth::authenticate();
+pub fn scrape(params: &HashMap<&str, &str>, config_path: &str) -> Vec<Offer> {
+    let access_token = auth::authenticate(config_path);
     let mut search_result = search(access_token, params);
 
     parse_response(&mut search_result)
@@ -65,8 +68,9 @@ impl Offer {
 
         Offer {
             title: title,
-            price: parse_price(&allegro_offer.selling_mode.price.amount).expect("Olx: Could not parse price"),
-            url: allegro_offer.url()
+            price: parse_price(&allegro_offer.selling_mode.price.amount)
+                .expect("Olx: Could not parse price"),
+            url: allegro_offer.url(),
         }
     }
 }
@@ -74,6 +78,7 @@ impl Offer {
 fn parse_response(response: &mut reqwest::Response) -> Vec<Offer> {
     let mut collection = Vec::new();
 
+    println!("resp status: {}", response.status());
     let allegro_response: Response = response.json().unwrap();
 
     for allegro_offer in allegro_response.items.regular.iter() {
@@ -100,11 +105,12 @@ fn search(token: String, params: &HashMap<&str, &str>) -> reqwest::Response {
 
     let url = format!("{}/offers/listing", BASE_URL);
 
-    let response = client.get(&url)
-                         .headers(construct_headers())
-                         .query(&query)
-                         .bearer_auth(token)
-                         .send();
+    let response = client
+        .get(&url)
+        .headers(construct_headers())
+        .query(&query)
+        .bearer_auth(token)
+        .send();
 
     response.unwrap()
 }
@@ -112,7 +118,17 @@ fn search(token: String, params: &HashMap<&str, &str>) -> reqwest::Response {
 fn construct_headers() -> HeaderMap {
     let mut headers = HeaderMap::new();
 
-    headers.insert(ACCEPT, HeaderValue::from_static("application/vnd.allegro.public.v1+json"));
+    headers.insert(
+        ACCEPT,
+        HeaderValue::from_static("application/vnd.allegro.public.v1+json"),
+    );
 
     headers
+}
+
+pub fn setup(config_path: &str, cid: &str, sec: &str) {
+    init_config(config_path, cid, sec);
+    authenticate(config_path);
+
+    return;
 }
