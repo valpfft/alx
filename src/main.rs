@@ -9,11 +9,7 @@ use std::{fmt, io};
 use clap::{App, Arg};
 use serde::Serialize;
 
-#[macro_use]
-extern crate prettytable;
-use prettytable::{Row, Table};
-
-mod allegro_client;
+use comfy_table::{Attribute, Cell, CellAlignment, ContentArrangement, Table};
 mod olx_client;
 
 fn main() {
@@ -51,18 +47,6 @@ fn main() {
                 .help("Exports search result into csv"),
         )
         .arg(
-            Arg::with_name("allegro_cid")
-                .long("allegro-cid")
-                .takes_value(true)
-                .help("Allegro Client ID. Grab it here - https://apps.developer.allegro.pl/"),
-        )
-        .arg(
-            Arg::with_name("allegro_secret")
-                .long("allegro-secret")
-                .takes_value(true)
-                .help("Allegro Client Secret. Grab it here - https://apps.developer.allegro.pl/"),
-        )
-        .arg(
             Arg::with_name("config_path")
                 .long("config-path")
                 .short("c")
@@ -78,18 +62,9 @@ fn main() {
         )
         .get_matches();
 
-    let config_path: &str = matches.value_of("config_path").unwrap();
-    if matches.is_present("setup") {
-        if matches.is_present("allegro_cid") && matches.is_present("allegro_secret") {
-            let cid = matches.value_of("allegro_cid").unwrap();
-            let sec = matches.value_of("allegro_secret").unwrap();
-
-            allegro_client::setup(config_path, &cid, &sec);
-            return;
-        } else {
-            panic!("provide allegro-cid and allegro-secret for initial setup!")
-        }
-    }
+    // let config_path: &str = matches.value_of("config_path").unwrap();
+    // if matches.is_present("setup") {
+    // }
     let mut params = HashMap::new();
     params.insert("query", matches.value_of("query").unwrap());
 
@@ -102,7 +77,6 @@ fn main() {
     }
 
     let mut offers = Vec::new();
-    offers.append(&mut allegro_client::scrape(&params, config_path));
     offers.append(&mut olx_client::scrape(&params));
 
     offers.sort_unstable_by(|a, b| {
@@ -140,11 +114,23 @@ fn export_csv(offers: &Vec<Offer>) {
 fn render_table(offers: &Vec<Offer>) {
     let mut table = Table::new();
 
+    table
+        .set_header(vec!["Title", "Price", "URL"])
+        .set_content_arrangement(ContentArrangement::DynamicFullWidth);
+
     for offer in offers.iter() {
-        table.add_row(offer.table_row());
+        table.add_row(vec![
+            Cell::new(&offer.title),
+            Cell::new(&offer.price.to_string()),
+            Cell::new(&offer.url).add_attribute(Attribute::Italic),
+        ]);
     }
 
-    table.printstd();
+    let url_column = table.get_column_mut(2).unwrap();
+    url_column.set_padding((1, 1));
+    url_column.set_cell_alignment(CellAlignment::Left);
+
+    println!("{}", table);
 }
 
 #[derive(Serialize)]
@@ -161,12 +147,6 @@ impl fmt::Display for Offer {
             "title: {}, price: {}\n url: {}",
             self.title, self.price, self.url
         )
-    }
-}
-
-impl Offer {
-    fn table_row(&self) -> Row {
-        row![self.title, self.price, self.url]
     }
 }
 
