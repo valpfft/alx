@@ -10,6 +10,7 @@ use clap::{App, Arg};
 use serde::Serialize;
 
 use comfy_table::{Attribute, Cell, CellAlignment, ContentArrangement, Table};
+mod allegro_lokalnie_client;
 mod olx_client;
 
 fn main() {
@@ -17,7 +18,7 @@ fn main() {
         &format!("{}/.config/alx_config.json", std::env::var("HOME").unwrap());
 
     let matches = App::new("alx")
-        .version("0.2.0")
+        .version("0.3.0")
         .author("Valentin Michaluk <valentin.michaluk@gmail.com>")
         .about("Hey Alx'er! Let's find something!")
         .arg(
@@ -78,7 +79,7 @@ fn main() {
 
     let mut offers = Vec::new();
     offers.append(&mut olx_client::scrape(&params));
-
+    offers.append(&mut allegro_lokalnie_client::scrape(&params));
     offers.sort_unstable_by(|a, b| {
         a.price
             .partial_cmp(&b.price)
@@ -90,13 +91,14 @@ fn main() {
     } else {
         render_table(&offers);
 
-        let lowest_price = offers
-            .iter()
-            .min_by_key(|o| o.price as u32)
-            .expect("Could not find offer with a lowest price");
-
         println!("Total items: {}", offers.len());
-        println!("Item with a lowest price: {}", lowest_price);
+
+        match { offers.iter().min_by_key(|o| o.price as u32) } {
+            Some(lp) => {
+                println!("Item with a lowest price: {}", lp);
+            }
+            _ => (),
+        }
     }
 }
 
@@ -151,12 +153,14 @@ impl fmt::Display for Offer {
 }
 
 fn parse_price(input: &str) -> Option<f32> {
-    match input
-        .trim_matches(char::is_alphabetic)
-        .replace(" ", "")
-        .replace(",", ".")
-        .parse::<f32>()
-    {
+    match {
+        let t = input
+            .trim_matches(char::is_alphabetic)
+            .trim_matches(char::is_whitespace)
+            .replace(",", ".");
+
+        t.parse::<f32>()
+    } {
         Ok(v) => Some(v),
         Err(_) => Some(9999999f32),
     }

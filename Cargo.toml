@@ -1,6 +1,6 @@
 [package]
 name = "alx"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Valentin Michaluk <valentin.michaluk@gmail.com>"]
 edition = "2021"
 
