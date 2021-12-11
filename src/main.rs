@@ -14,30 +14,19 @@ mod allegro_lokalnie_client;
 mod olx_client;
 
 fn main() {
-    let default_config_path: &str =
-        &format!("{}/.config/alx_config.json", std::env::var("HOME").unwrap());
-
     let matches = App::new("alx")
-        .version("0.3.0")
+        .version("0.4.0")
         .author("Valentin Michaluk <valentin.michaluk@gmail.com>")
         .about("Hey Alx'er! Let's find something!")
         .arg(
-            Arg::with_name("query")
-                .required_unless("setup")
-                .short("q")
-                .long("query")
-                .takes_value(true)
-                .help("Search query"),
-        )
-        .arg(
             Arg::with_name("min_price")
-                .long("min-price")
+                .long("min")
                 .takes_value(true)
                 .help("Minimum price"),
         )
         .arg(
             Arg::with_name("max_price")
-                .long("max-price")
+                .long("max")
                 .takes_value(true)
                 .help("Maximum price"),
         )
@@ -48,26 +37,22 @@ fn main() {
                 .help("Exports search result into csv"),
         )
         .arg(
-            Arg::with_name("config_path")
-                .long("config-path")
-                .short("c")
-                .takes_value(true)
-                .help("Config path.")
-                .default_value(default_config_path),
-        )
-        .arg(
-            Arg::with_name("setup")
-                .long("setup")
-                .takes_value(false)
-                .help("Perform initial setup?"),
+            Arg::with_name("query")
+                .help("Search query")
+                .index(1)
+                .required(true)
+                .multiple(true),
         )
         .get_matches();
 
-    // let config_path: &str = matches.value_of("config_path").unwrap();
-    // if matches.is_present("setup") {
-    // }
     let mut params = HashMap::new();
-    params.insert("query", matches.value_of("query").unwrap());
+
+    let q: &str = &matches
+        .values_of("query")
+        .unwrap()
+        .collect::<Vec<&str>>()
+        .join(" ");
+    params.insert("query", q);
 
     if matches.is_present("min_price") {
         params.insert("min_price", matches.value_of("min_price").unwrap());
