@@ -1,6 +1,8 @@
 # alx
 
-Helps you with quick searches on olx
+Helps you with quick searches on olx.pl and allegrolokalnie.pl
+
+<img src="/docs/image.png?raw=true" alt="alx" title="alx">
    
 # Install
    
@@ -19,27 +21,23 @@ If it fails to compile and you installed Rust a long time ago, try `rustup updat
 
 ## Help
 
-``` shsh
+```sh
 ❯ alx --help
-alx 0.2.0
+alx 0.4.0
 Hey Alx'er! Let's find something!
 
 USAGE:
-    alx [FLAGS] [OPTIONS] --query <query>
+    alx [FLAGS] [OPTIONS] <query>...
 
 FLAGS:
         --export-csv    Exports search result into csv
     -h, --help          Prints help information
-        --setup         Perform initial setup?
     -V, --version       Prints version information
 
 OPTIONS:
-    -c, --config-path <config_path>    Config path. [default: $HOME/.config/alx_config.json]
-        --max-price <max_price>        Maximum price
-        --min-price <min_price>        Minimum price
-    -q, --query <query>                Search query
+        --max <max_price>    Maximum price
+        --min <min_price>    Minimum price
+
+ARGS:
+    <query>...    Search query
 ```
-
-## Search
-
-<img src="/docs/image.png?raw=true" alt="alx" title="alx">
